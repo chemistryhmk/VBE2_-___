@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Интерактивный практикум: Оксиды / Oxidai (VBE Chemistry)</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+            min-height: 100vh;
+        }
+
+        .chem-font {
+            font-family: 'Fredoka', sans-serif;
+        }
+
+        .glass-card {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .glass-card-light {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        /* Pulse and bounce animation for selected items */
+        @keyframes pulse-border {
+            0%, 100% { border-color: #38bdf8; box-shadow: 0 0 15px rgba(56, 189, 248, 0.5); }
+            50% { border-color: #818cf8; box-shadow: 0 0 25px rgba(129, 140, 248, 0.8); }
+        }
+
+        .selected-card {
+            animation: pulse-border 1.5s infinite ease-in-out;
+            transform: translateY(-4px) scale(1.03);
+        }
+
+        /* Shake animation for wrong answers */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-8px); }
+            40%, 80% { transform: translateX(8px); }
+        }
+
+        .shake-anim {
+            animation: shake 0.4s ease-in-out;
+        }
+
+        /* Subscript formatting */
+        sub {
+            font-size: 0.75em;
+            bottom: -0.2em;
+        }
+
+        .bin-hover {
+            transition: all 0.2s ease;
+        }
+
+        .bin-hover:hover {
+            transform: translateY(-3px);
+            border-color: #38bdf8;
+        }
+    </style>
+</head>
+<body class="text-slate-100 flex flex-col justify-between p-3 sm:p-6 min-h-screen">
+
+    <!-- Top Header Bar -->
+    <header class="max-w-6xl mx-auto w-full mb-6">
+        <div class="glass-card rounded-2xl p-4 sm:p-5 flex flex-wrap items-center justify-between gap-4 shadow-xl">
+            <div class="flex items-center space-x-3">
+                <div class="w-12 h-12 rounded-xl bg-gradient-to-tr from-sky-500 to-indigo-600 flex items-center justify-center text-2xl shadow-lg shadow-sky-500/20">
+                    <i class="fa-solid fa-flask-vial text-white"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl sm:text-2xl font-bold bg-gradient-to-r from-sky-400 via-indigo-300 to-emerald-400 bg-clip-text text-transparent chem-font">
+                        Оксиды • Oxidai
+                    </h1>
+                    <p class="text-xs sm:text-sm text-slate-400">Интерактивный тренажер VBE2 Chemija</p>
+                </div>
+            </div>
+
+            <!-- Score & Controls -->
+            <div class="flex items-center gap-3 sm:gap-5 ml-auto">
+                <div class="bg-slate-800/80 border border-slate-700/80 px-4 py-2 rounded-xl flex items-center gap-3 shadow-inner">
+                    <i class="fa-solid fa-trophy text-amber-400 text-lg"></i>
+                    <div>
+                        <div class="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">Баллы / Taškai</div>
+                        <div id="scoreDisplay" class="text-lg font-extrabold text-amber-300 chem-font">0</div>
+                    </div>
+                </div>
+
+                <button id="soundToggleBtn" onclick="toggleSound()" class="p-3 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl transition text-slate-300 hover:text-white">
+                    <i id="soundIcon" class="fa-solid fa-volume-high"></i>
+                </button>
+
+                <button onclick="restartAllGames()" class="p-3 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl transition text-slate-300 hover:text-white" title="Сбросить прогресс">
+                    <i class="fa-solid fa-rotate-right"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Mode Navigation Tabs -->
+        <div class="flex gap-2 sm:gap-4 mt-4">
+            <button id="tabMode1Btn" onclick="switchMode(1)" class="flex-1 py-3 px-4 rounded-xl font-semibold text-sm sm:text-base transition flex items-center justify-center gap-2 bg-gradient-to-r from-sky-500 to-blue-600 text-white shadow-lg shadow-sky-500/20">
+                <i class="fa-solid fa-boxes-packing"></i>
+                <span>Задание 1: Сортировка (20 оксидов)</span>
+            </button>
+            <button id="tabMode2Btn" onclick="switchMode(2)" class="flex-1 py-3 px-4 rounded-xl font-semibold text-sm sm:text-base transition flex items-center justify-center gap-2 bg-slate-800/80 text-slate-400 hover:bg-slate-800 hover:text-slate-200 border border-slate-700/60">
+                <i class="fa-solid fa-magnifying-glass-chart"></i>
+                <span>Задание 2: Найди лишнее (10 сетов)</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="max-w-6xl mx-auto w-full flex-grow">
+
+        <!-- ================= MODE 1: SORTING GAME ================= -->
+        <section id="mode1Section" class="space-y-6">
+            <!-- Instruction Box -->
+            <div class="glass-card-light rounded-2xl p-4 sm:p-5 flex items-start gap-3 border-l-4 border-l-sky-500">
+                <i class="fa-solid fa-circle-info text-sky-400 text-xl mt-0.5"></i>
+                <div class="text-sm sm:text-base">
+                    <span class="font-bold text-sky-300">Инструкция:</span> Нажмите на оксид из нижнего пула, а затем выберите правильную категорию (<span class="italic text-emerald-400">Oksidų klasifikacija</span>). Разложите все 20 формул!
+                </div>
+            </div>
+
+            <!-- Target Category Bins (4 Columns) -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <!-- Bin 1: Basic -->
+                <div onclick="depositSelected('basic')" class="bin-hover glass-card rounded-2xl p-4 border-t-4 border-t-emerald-500 flex flex-col justify-between min-h-[200px] cursor-pointer">
+                    <div>
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs font-bold uppercase tracking-wider text-emerald-400 bg-emerald-950/80 px-2.5 py-1 rounded-full border border-emerald-800">Основные</span>
+                            <i class="fa-solid fa-cube text-emerald-400 text-xl"></i>
+                        </div>
+                        <h3 class="text-base font-bold text-slate-100">Baziniai oxidai</h3>
+                        <p class="text-xs text-slate-400 mt-1">Оксиды металлов (+1, +2)</p>
+                    </div>
+                    <div id="bin-basic" class="mt-3 pt-3 border-t border-slate-700/60 flex flex-wrap gap-1.5 min-h-[60px] align-content-start">
+                        <!-- Sorted items will drop here -->
+                    </div>
+                </div>
+
+                <!-- Bin 2: Acidic -->
+                <div onclick="depositSelected('acidic')" class="bin-hover glass-card rounded-2xl p-4 border-t-4 border-t-rose-500 flex flex-col justify-between min-h-[200px] cursor-pointer">
+                    <div>
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs font-bold uppercase tracking-wider text-rose-400 bg-rose-950/80 px-2.5 py-1 rounded-full border border-rose-800">Кислотные</span>
+                            <i class="fa-solid fa-fire-flame-curved text-rose-400 text-xl"></i>
+                        </div>
+                        <h3 class="text-base font-bold text-slate-100">Rūgštiniai oxidai</h3>
+                        <p class="text-xs text-slate-400 mt-1">Оксиды неметаллов / Ме (+5..+7)</p>
+                    </div>
+                    <div id="bin-acidic" class="mt-3 pt-3 border-t border-slate-700/60 flex flex-wrap gap-1.5 min-h-[60px] align-content-start">
+                        <!-- Sorted items will drop here -->
+                    </div>
+                </div>
+
+                <!-- Bin 3: Amphoteric -->
+                <div onclick="depositSelected('amphoteric')" class="bin-hover glass-card rounded-2xl p-4 border-t-4 border-t-amber-500 flex flex-col justify-between min-h-[200px] cursor-pointer">
+                    <div>
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs font-bold uppercase tracking-wider text-amber-400 bg-amber-950/80 px-2.5 py-1 rounded-full border border-amber-800">Амфотерные</span>
+                            <i class="fa-solid fa-arrows-split-up-and-left text-amber-400 text-xl"></i>
+                        </div>
+                        <h3 class="text-base font-bold text-slate-100">Amfoteriniai oxidai</h3>
+                        <p class="text-xs text-slate-400 mt-1">Двойственные свойства (+3, +4, Zn, Be)</p>
+                    </div>
+                    <div id="bin-amphoteric" class="mt-3 pt-3 border-t border-slate-700/60 flex flex-wrap gap-1.5 min-h-[60px] align-content-start">
+                        <!-- Sorted items will drop here -->
+                    </div>
+                </div>
+
+                <!-- Bin 4: Indifferent -->
+                <div onclick="depositSelected('indifferent')" class="bin-hover glass-card rounded-2xl p-4 border-t-4 border-t-purple-500 flex flex-col justify-between min-h-[200px] cursor-pointer">
+                    <div>
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs font-bold uppercase tracking-wider text-purple-400 bg-purple-950/80 px-2.5 py-1 rounded-full border border-purple-800">Несолеобразующие</span>
+                            <i class="fa-solid fa-ban text-purple-400 text-xl"></i>
+                        </div>
+                        <h3 class="text-base font-bold text-slate-100">Indiferentiniai oxidai</h3>
+                        <p class="text-xs text-slate-400 mt-1">Не реагируют с H₂O, кислотами, щелочами</p>
+                    </div>
+                    <div id="bin-indifferent" class="mt-3 pt-3 border-t border-slate-700/60 flex flex-wrap gap-1.5 min-h-[60px] align-content-start">
+                        <!-- Sorted items will drop here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Oxide Formula Pool -->
+            <div class="glass-card rounded-2xl p-5 border border-slate-700">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-lg font-bold text-slate-200 flex items-center gap-2">
+                        <i class="fa-solid fa-vial-circle-check text-sky-400"></i>
+                        <span>Доступные оксиды / Galimi oxidai</span>
+                    </h2>
+                    <span id="poolCounter" class="text-xs font-semibold px-3 py-1 rounded-full bg-slate-800 border border-slate-700 text-sky-400">
+                        Осталось: 20
+                    </span>
+                </div>
+
+                <!-- Items Container -->
+                <div id="oxidePool" class="flex flex-wrap gap-3 justify-center py-2">
+                    <!-- Oxide cards rendered dynamically here -->
+                </div>
+            </div>
+
+            <!-- Feedback Message Container Mode 1 -->
+            <div id="mode1Feedback" class="hidden rounded-2xl p-4 text-center text-sm font-semibold transition-all"></div>
+        </section>
+
+        <!-- ================= MODE 2: ODD ONE OUT GAME ================= -->
+        <section id="mode2Section" class="hidden space-y-6">
+            <!-- Round Progress & Info -->
+            <div class="glass-card rounded-2xl p-5 flex flex-wrap items-center justify-between gap-4">
+                <div>
+                    <span class="text-xs font-bold uppercase tracking-wider text-sky-400 bg-sky-950 px-3 py-1 rounded-full border border-sky-800">
+                        Раунд <span id="currentRoundText">1</span> из 10
+                    </span>
+                    <h2 class="text-xl font-bold text-slate-100 mt-2">Найдите «Лишний» Оксид / Rask perteklinį oksidą</h2>
+                    <p class="text-xs sm:text-sm text-slate-400 mt-0.5">Четыре оксида объединены общим признаком, а один — отличается!</p>
+                </div>
+
+                <!-- Progress Bar -->
+                <div class="w-full sm:w-48 bg-slate-800 rounded-full h-3 border border-slate-700 overflow-hidden">
+                    <div id="mode2ProgressBar" class="bg-gradient-to-r from-sky-500 to-indigo-500 h-full w-10 transition-all duration-300"></div>
+                </div>
+            </div>
+
+            <!-- 5 Formulas Cards Display -->
+            <div id="oddOneOutCards" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
+                <!-- 5 Cards populated dynamically -->
+            </div>
+
+            <!-- Explanation & Next Round Area -->
+            <div id="mode2ExplanationBox" class="hidden glass-card rounded-2xl p-6 border-l-4 transition-all space-y-4">
+                <div id="explanationHeader" class="flex items-center gap-3 text-lg font-bold"></div>
+                <p id="explanationText" class="text-slate-200 text-sm sm:text-base leading-relaxed"></p>
+                
+                <div class="pt-2 flex justify-end">
+                    <button id="nextRoundBtn" onclick="nextRoundMode2()" class="px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white font-bold rounded-xl shadow-lg transition flex items-center gap-2">
+                        <span>Следующий раунд / Kitas etapas</span>
+                        <i class="fa-solid fa-arrow-right"></i>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= FINAL RESULTS SCREEN ================= -->
+        <section id="finalResultsSection" class="hidden glass-card rounded-3xl p-8 text-center max-w-2xl mx-auto my-8 border border-sky-500/30 shadow-2xl">
+            <div class="w-20 h-20 rounded-full bg-gradient-to-tr from-amber-400 to-amber-600 flex items-center justify-center text-4xl text-slate-900 mx-auto mb-4 shadow-lg shadow-amber-500/30">
+                <i class="fa-solid fa-trophy"></i>
+            </div>
+            <h2 class="text-3xl font-extrabold text-white chem-font">Замечательный результат!</h2>
+            <p class="text-slate-300 mt-2">Puikus rezultatas! Вы успешно завершили практические упражнения по оксидам.</p>
+
+            <div class="bg-slate-800/80 rounded-2xl p-6 my-6 border border-slate-700/80 flex justify-around">
+                <div>
+                    <div class="text-xs uppercase tracking-wider text-slate-400 font-bold">Итоговый счет</div>
+                    <div id="finalScoreDisplay" class="text-3xl font-black text-amber-400 chem-font mt-1">0</div>
+                </div>
+                <div class="border-r border-slate-700"></div>
+                <div>
+                    <div class="text-xs uppercase tracking-wider text-slate-400 font-bold">Точность ответов</div>
+                    <div id="accuracyDisplay" class="text-3xl font-black text-emerald-400 chem-font mt-1">100%</div>
+                </div>
+            </div>
+
+            <button onclick="restartAllGames()" class="px-8 py-4 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-white font-bold rounded-xl shadow-xl transition flex items-center gap-3 mx-auto">
+                <i class="fa-solid fa-rotate-right text-lg"></i>
+                <span>Пройти снова / Žaisti iš naujo</span>
+            </button>
+        </section>
+    </main>
+
+    <footer class="max-w-6xl mx-auto w-full text-center text-xs text-slate-500 py-6">
+        VBE Chemija Practicum • Оксиды (Oxidai) • Двуязычный интерактивный модуль
+    </footer>
+
+    <script>
+        /* ================= GAME DATA ================= */
+
+        // Mode 1: 20 Oxides Data
+        const oxidesDataMode1 = [
+            // Baziniai (6)
+            { id: 1, formula: 'K₂O', category: 'basic', nameRu: 'Оксид калия', nameLt: 'Kalio oksidas', explanation: 'Оксид щелочного металла (группа IA) — основной оксид.' },
+            { id: 2, formula: 'Na₂O', category: 'basic', nameRu: 'Оксид натрия', nameLt: 'Natrio oksidas', explanation: 'Оксид щелочного металла — основной оксид, реагирует с водой с образованием щелочи.' },
+            { id: 3, formula: 'CaO', category: 'basic', nameRu: 'Оксид кальция', nameLt: 'Kalcio oksidas', explanation: 'Оксид щелочноземельного металла (+2) — основной оксид.' },
+            { id: 4, formula: 'BaO', category: 'basic', nameRu: 'Оксид бария', nameLt: 'Bario oksidas', explanation: 'Оксид щелочноземельного металла (+2) — основной оксид.' },
+            { id: 5, formula: 'CuO', category: 'basic', nameRu: 'Оксид меди(II)', nameLt: 'Vario(II) oksidas', explanation: 'Оксид D-металла в низкой степени окисления (+2) — основной оксид.' },
+            { id: 6, formula: 'FeO', category: 'basic', nameRu: 'Оксид железа(II)', nameLt: 'Geležies(II) oksidas', explanation: 'Оксид железа в низкой степени окисления (+2) — основной оксид.' },
+
+            // Rūgštiniai (7)
+            { id: 7, formula: 'SO₃', category: 'acidic', nameRu: 'Оксид серы(VI)', nameLt: 'Sieros trioksidas', explanation: 'Ангидрид серной кислоты (H₂SO₄) — кислотный оксид.' },
+            { id: 8, formula: 'SO₂', category: 'acidic', nameRu: 'Оксид серы(IV)', nameLt: 'Sieros dioksidas', explanation: 'Ангидрид сернистой кислоты (H₂SO₃) — кислотный оксид.' },
+            { id: 9, formula: 'CO₂', category: 'acidic', nameRu: 'Оксид углерода(IV)', nameLt: 'Anglies dioksidas', explanation: 'Ангидрид угольной кислоты (H₂CO₃) — кислотный оксид.' },
+            { id: 10, formula: 'P₂O₅', category: 'acidic', nameRu: 'Оксид фосфора(V)', nameLt: 'Difosforo pentoksidas', explanation: 'Ангидрид фосфорной кислоты (H₃PO₄) — кислотный оксид.' },
+            { id: 11, formula: 'CrO₃', category: 'acidic', nameRu: 'Оксид хрома(VI)', nameLt: 'Chromo(VI) oksidas', explanation: 'Оксид металла в высокой степени окисления (+6) — кислотный оксид.' },
+            { id: 12, formula: 'Mn₂O₇', category: 'acidic', nameRu: 'Оксид марганца(VII)', nameLt: 'Mangano(VII) oksidas', explanation: 'Оксид металла в высшей степени окисления (+7) — кислотный оксид.' },
+            { id: 13, formula: 'N₂O₅', category: 'acidic', nameRu: 'Оксид азота(V)', nameLt: 'Dinitrato pentoksidas', explanation: 'Ангидрид азотной кислоты (HNO₃) — кислотный оксид.' },
+
+            // Amfoteriniai (4)
+            { id: 14, formula: 'ZnO', category: 'amphoteric', nameRu: 'Оксид цинка', nameLt: 'Cinko oksidas', explanation: 'Классический амфотерный оксид (+2, исключение).' },
+            { id: 15, formula: 'Al₂O₃', category: 'amphoteric', nameRu: 'Оксид алюминия', nameLt: 'Aliuminio oksidas', explanation: 'Амфотерный оксид металла в степени окисления +3.' },
+            { id: 16, formula: 'BeO', category: 'amphoteric', nameRu: 'Оксид бериллия', nameLt: 'Berilio oksidas', explanation: 'Амфотерный оксид (+2, исключение группы IIA).' },
+            { id: 17, formula: 'Fe₂O₃', category: 'amphoteric', nameRu: 'Оксид железа(III)', nameLt: 'Geležies(III) oksidas', explanation: 'Амфотерный оксид железа в степени окисления +3.' },
+
+            // Indiferentiniai (3)
+            { id: 18, formula: 'CO', category: 'indifferent', nameRu: 'Оксид углерода(II)', nameLt: 'Anglies monoksidas', explanation: 'Несолеобразующий (безразличный) оксид.' },
+            { id: 19, formula: 'NO', category: 'indifferent', nameRu: 'Оксид азота(II)', nameLt: 'Azoto monoksidas', explanation: 'Несолеобразующий оксид азота.' },
+            { id: 20, formula: 'N₂O', category: 'indifferent', nameRu: 'Оксид азота(I)', nameLt: 'Dinitrato monoksidas', explanation: 'Несолеобразующий оксид азота (веселящий газ).' }
+        ];
+
+        // Mode 2: 10 Sets of 5 Oxides
+        const mode2Sets = [
+            {
+                round: 1,
+                items: [
+                    { formula: 'Na₂O', isOdd: false },
+                    { formula: 'CO₂', isOdd: true },
+                    { formula: 'CaO', isOdd: false },
+                    { formula: 'BaO', isOdd: false },
+                    { formula: 'K₂O', isOdd: false }
+                ],
+                oddFormula: 'CO₂',
+                explanationRu: 'CO₂ — это кислотный оксид (Rūgštinis oksidas), в то время как остальные четыре формулы (Na₂O, CaO, BaO, K₂O) являются основными оксидами (Baziniai oxidai).',
+                explanationLt: 'CO₂ yra rūgštinis oksidas, o kiti keturi yra baziniai oxidai.'
+            },
+            {
+                round: 2,
+                items: [
+                    { formula: 'SO₂', isOdd: false },
+                    { formula: 'SO₃', isOdd: false },
+                    { formula: 'CO', isOdd: true },
+                    { formula: 'CO₂', isOdd: false },
+                    { formula: 'P₂O₅', isOdd: false }
+                ],
+                oddFormula: 'CO',
+                explanationRu: 'CO — это несолеобразующий оксид (Indiferentinis oksidas). Все остальные четыре оксида — кислотные (Rūgštiniai), реагирующие со щелочами.',
+                explanationLt: 'CO yra indiferentinis oksidas, o kiti keturi yra rūgštiniai oxidai.'
+            },
+            {
+                round: 3,
+                items: [
+                    { formula: 'CuO', isOdd: true },
+                    { formula: 'ZnO', isOdd: false },
+                    { formula: 'Al₂O₃', isOdd: false },
+                    { formula: 'BeO', isOdd: false },
+                    { formula: 'Fe₂O₃', isOdd: false }
+                ],
+                oddFormula: 'CuO',
+                explanationRu: 'CuO — основной оксид (Bazinis oksidas), реагирующий только с кислотами. Остальные (ZnO, Al₂O₃, BeO, Fe₂O₃) — амфотерные (Amfoteriniai).',
+                explanationLt: 'CuO yra bazinis oksidas, o kiti keturi yra amfoteriniai oxidai.'
+            },
+            {
+                round: 4,
+                items: [
+                    { formula: 'K₂O', isOdd: false },
+                    { formula: 'Na₂O', isOdd: false },
+                    { formula: 'Li₂O', isOdd: false },
+                    { formula: 'CuO', isOdd: true },
+                    { formula: 'BaO', isOdd: false }
+                ],
+                oddFormula: 'CuO',
+                explanationRu: 'CuO НЕ реагирует с водой (netirpus / nereaguoja su vandeniu). Все остальные оксиды энергично реагируют с водой с образованием растворимых щелочей (šarmai).',
+                explanationLt: 'CuO nereaguoja su vandeniu, o visi kiti sudaro šarmus.'
+            },
+            {
+                round: 5,
+                items: [
+                    { formula: 'SO₃', isOdd: false },
+                    { formula: 'SiO₂', isOdd: true },
+                    { formula: 'CO₂', isOdd: false },
+                    { formula: 'P₂O₅', isOdd: false },
+                    { formula: 'N₂O₅', isOdd: false }
+                ],
+                oddFormula: 'SiO₂',
+                explanationRu: 'SiO₂ (песок) НЕ реагирует с водой при нормальных условиях. Все остальные кислотные оксиды гидратируются в соответствующие кислоты.',
+                explanationLt: 'SiO₂ nereaguoja su vandeniu, o kiti rūgštiniai oxidai sudaro rūgštis.'
+            },
+            {
+                round: 6,
+                items: [
+                    { formula: 'CrO₃', isOdd: false },
+                    { formula: 'Mn₂O₇', isOdd: false },
+                    { formula: 'SO₃', isOdd: false },
+                    { formula: 'Fe₂O₃', isOdd: true },
+                    { formula: 'N₂O₅', isOdd: false }
+                ],
+                oddFormula: 'Fe₂O₃',
+                explanationRu: 'Fe₂O₃ — амфотерный оксид металла (+3). Остальные формулы представлены высшими кислотными оксидами (Rūgštiniai oxidai) с $SO = +5, +6, +7$.',
+                explanationLt: 'Fe₂O₃ yra amfoterinis oksidas, o visi kiti yra rūgštiniai oxidai.'
+            },
+            {
+                round: 7,
+                items: [
+                    { formula: 'FeO', isOdd: false },
+                    { formula: 'ZnO', isOdd: true },
+                    { formula: 'CuO', isOdd: false },
+                    { formula: 'MgO', isOdd: false },
+                    { formula: 'CaO', isOdd: false }
+                ],
+                oddFormula: 'ZnO',
+                explanationRu: 'ZnO — амфотерный оксид (Amfoterinis oksidas) и реагирует также со щелочами. Остальные оксиды — чисто основные (Baziniai).',
+                explanationLt: 'ZnO yra amfoterinis, o kiti yra tik baziniai oxidai.'
+            },
+            {
+                round: 8,
+                items: [
+                    { formula: 'NO', isOdd: true },
+                    { formula: 'CO₂', isOdd: false },
+                    { formula: 'SO₂', isOdd: false },
+                    { formula: 'NO₂', isOdd: false },
+                    { formula: 'P₂O₅', isOdd: false }
+                ],
+                oddFormula: 'NO',
+                explanationRu: 'NO — несолеобразующий оксид (Indiferentinis oksidas). Все остальные — солеобразующие кислотные оксиды (Rūgštiniai).',
+                explanationLt: 'NO yra indiferentinis oksidas, o kiti — rūgštiniai oxidai.'
+            },
+            {
+                round: 9,
+                items: [
+                    { formula: 'Al₂O₃', isOdd: false },
+                    { formula: 'BeO', isOdd: false },
+                    { formula: 'CaO', isOdd: true },
+                    { formula: 'ZnO', isOdd: false },
+                    { formula: 'PbO', isOdd: false }
+                ],
+                oddFormula: 'CaO',
+                explanationRu: 'CaO — основной оксид щелочноземельного металла (Bazinis oksidas). Остальные 4 оксида прочно входят в список амфотерных оксидов VBE.',
+                explanationLt: 'CaO yra bazinis oksidas, o visi kiti — amfoteriniai oxidai.'
+            },
+            {
+                round: 10,
+                items: [
+                    { formula: 'BaO', isOdd: false },
+                    { formula: 'SrO', isOdd: false },
+                    { formula: 'K₂O', isOdd: false },
+                    { formula: 'Al₂O₃', isOdd: true },
+                    { formula: 'Na₂O', isOdd: false }
+                ],
+                oddFormula: 'Al₂O₃',
+                explanationRu: 'Al₂O₃ — амфотерный оксид. Остальные оксиды (BaO, SrO, K₂O, Na₂O) образуют при растворении в воде сильные основания — щелочи (šarmai).',
+                explanationLt: 'Al₂O₃ yra amfoterinis oksidas, o kiti tirpdami vandenyje sudaro šarmus.'
+            }
+        ];
+
+        /* ================= STREAMING_CHUNK:Initializing Application State Variables... ================= */
+        let state = {
+            score: 0,
+            attempts: 0,
+            correctCount: 0,
+            soundEnabled: true,
+            activeMode: 1, // 1 or 2
+            
+            // Mode 1 state
+            selectedOxideId: null,
+            sortedPool: [], // items placed in bins
+            remainingPool: [], // items left to sort
+
+            // Mode 2 state
+            currentRound: 0,
+            roundAnswered: false
+        };
+
+        /* ================= AUDIO SYNTHESIZER ================= */
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        function playSound(type) {
+            if (!state.soundEnabled) return;
+            try {
+                if (audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                if (type === 'correct') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(523.25, audioCtx.currentTime); // C5
+                    osc.frequency.exponentialRampToValueAtTime(659.25, audioCtx.currentTime + 0.15); // E5
+                    gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 0.3);
+                } else if (type === 'wrong') {
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(220, audioCtx.currentTime); // A3
+                    osc.frequency.exponentialRampToValueAtTime(130, audioCtx.currentTime + 0.25);
+                    gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.25);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 0.25);
+                } else if (type === 'win') {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(440, audioCtx.currentTime);
+                    osc.frequency.setValueAtTime(554.37, audioCtx.currentTime + 0.1);
+                    osc.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.2);
+                    osc.frequency.setValueAtTime(880, audioCtx.currentTime + 0.3);
+                    gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 0.5);
+                }
+            } catch (e) {
+                // Audio fallback silence
+            }
+        }
+
+        function toggleSound() {
+            state.soundEnabled = !state.soundEnabled;
+            const icon = document.getElementById('soundIcon');
+            if (state.soundEnabled) {
+                icon.className = 'fa-solid fa-volume-high';
+            } else {
+                icon.className = 'fa-solid fa-volume-xmark text-slate-500';
+            }
+        }
+
+        /* ================= HELPER FUNCTIONS ================= */
+        function formatFormula(formula) {
+            return formula.replace(/(\d+)/g, '<sub>$1</sub>');
+        }
+
+        function updateScore(points) {
+            state.score += points;
+            document.getElementById('scoreDisplay').innerText = state.score;
+        }
+
+        /* ================= STREAMING_CHUNK:Implementing Mode 1 Logic (Sorting)... ================= */
+        function initMode1() {
+            // Shuffle oxides
+            state.remainingPool = [...oxidesDataMode1].sort(() => Math.random() - 0.5);
+            state.sortedPool = [];
+            state.selectedOxideId = null;
+
+            // Clear Bins
+            ['basic', 'acidic', 'amphoteric', 'indifferent'].forEach(cat => {
+                document.getElementById(`bin-${cat}`).innerHTML = '';
+            });
+
+            renderMode1Pool();
+            hideFeedbackMode1();
+        }
+
+        function renderMode1Pool() {
+            const poolContainer = document.getElementById('oxidePool');
+            poolContainer.innerHTML = '';
+
+            document.getElementById('poolCounter').innerText = `Осталось: ${state.remainingPool.length}`;
+
+            if (state.remainingPool.length === 0) {
+                poolContainer.innerHTML = `
+                    <div class="text-center py-6">
+                        <i class="fa-solid fa-circle-check text-emerald-400 text-4xl mb-2"></i>
+                        <p class="font-bold text-slate-200">Все 20 оксидов успешно распределены!</p>
+                        <button onclick="switchMode(2)" class="mt-4 px-6 py-2.5 bg-sky-500 hover:bg-sky-400 text-white font-bold rounded-xl text-sm transition">
+                            Перейти к Заданию 2 <i class="fa-solid fa-arrow-right ml-1"></i>
+                        </button>
+                    </div>
+                `;
+                return;
+            }
+
+            state.remainingPool.forEach(item => {
+                const isSelected = state.selectedOxideId === item.id;
+                const card = document.createElement('button');
+                card.onclick = (e) => {
+                    e.stopPropagation();
+                    selectOxideMode1(item.id);
+                };
+
+                card.className = `px-4 py-2.5 rounded-xl border text-base font-bold transition-all shadow-md flex items-center gap-2 ${
+                    isSelected 
+                        ? 'bg-sky-600 text-white border-sky-300 selected-card' 
+                        : 'bg-slate-800/90 text-slate-100 border-slate-700 hover:bg-slate-700 hover:border-slate-500'
+                }`;
+
+                card.innerHTML = `
+                    <span class="chem-font tracking-wide">${formatFormula(item.formula)}</span>
+                `;
+                poolContainer.appendChild(card);
+            });
+        }
+
+        function selectOxideMode1(id) {
+            state.selectedOxideId = (state.selectedOxideId === id) ? null : id;
+            renderMode1Pool();
+            hideFeedbackMode1();
+        }
+
+        function depositSelected(targetCategory) {
+            if (!state.selectedOxideId) {
+                showFeedbackMode1('Выберите сначала оксид из нижнего пула!', 'warning');
+                return;
+            }
+
+            const item = state.remainingPool.find(o => o.id === state.selectedOxideId);
+            if (!item) return;
+
+            state.attempts++;
+
+            if (item.category === targetCategory) {
+                // Correct match
+                playSound('correct');
+                updateScore(10);
+                state.correctCount++;
+
+                // Move from remaining to sorted
+                state.remainingPool = state.remainingPool.filter(o => o.id !== item.id);
+                state.sortedPool.push(item);
+                state.selectedOxideId = null;
+
+                // Add mini badge to bin
+                const bin = document.getElementById(`bin-${targetCategory}`);
+                const badge = document.createElement('span');
+                badge.className = 'px-2.5 py-1 rounded-lg bg-slate-800 text-slate-200 border border-slate-700 text-xs font-bold chem-font shadow-sm animate-bounce';
+                badge.innerHTML = formatFormula(item.formula);
+                bin.appendChild(badge);
+
+                showFeedbackMode1(`Правильно! ${item.formula} (${item.nameLt}) — ${item.explanation}`, 'success');
+                renderMode1Pool();
+
+                // Check completion
+                if (state.remainingPool.length === 0 && state.currentRound === 10) {
+                    setTimeout(showFinalResults, 1000);
+                }
+            } else {
+                // Wrong match
+                playSound('wrong');
+                showFeedbackMode1(`Ошибка! ${item.formula} (${item.nameRu} / ${item.nameLt}) относится к другой категории. ${item.explanation}`, 'error');
+            }
+        }
+
+        function showFeedbackMode1(msg, type) {
+            const box = document.getElementById('mode1Feedback');
+            box.classList.remove('hidden', 'bg-emerald-950/80', 'border-emerald-700', 'text-emerald-300', 'bg-rose-950/80', 'border-rose-700', 'text-rose-300', 'bg-amber-950/80', 'border-amber-700', 'text-amber-300');
+
+            if (type === 'success') {
+                box.classList.add('bg-emerald-950/80', 'border', 'border-emerald-700', 'text-emerald-300');
+            } else if (type === 'error') {
+                box.classList.add('bg-rose-950/80', 'border', 'border-rose-700', 'text-rose-300', 'shake-anim');
+            } else {
+                box.classList.add('bg-amber-950/80', 'border', 'border-amber-700', 'text-amber-300');
+            }
+
+            box.innerHTML = msg;
+        }
+
+        function hideFeedbackMode1() {
+            document.getElementById('mode1Feedback').classList.add('hidden');
+        }
+
+        /* ================= STREAMING_CHUNK:Implementing Mode 2 Logic (Odd One Out)... ================= */
+        function initMode2() {
+            state.currentRound = 0;
+            renderRoundMode2();
+        }
+
+        function renderRoundMode2() {
+            state.roundAnswered = false;
+            const set = mode2Sets[state.currentRound];
+
+            document.getElementById('currentRoundText').innerText = state.currentRound + 1;
+            document.getElementById('mode2ProgressBar').style.width = `${((state.currentRound + 1) / 10) * 100}%`;
+
+            // Hide explanation box
+            const explBox = document.getElementById('mode2ExplanationBox');
+            explBox.classList.add('hidden');
+
+            // Render 5 Cards
+            const cardsContainer = document.getElementById('oddOneOutCards');
+            cardsContainer.innerHTML = '';
+
+            set.items.forEach((item, idx) => {
+                const btn = document.createElement('button');
+                btn.id = `mode2-card-${idx}`;
+                btn.onclick = () => handleChoiceMode2(idx, item.isOdd);
+                btn.className = 'h-32 glass-card rounded-2xl flex flex-col items-center justify-center p-4 border border-slate-700/80 hover:border-sky-400 hover:bg-slate-800 transition-all group';
+
+                btn.innerHTML = `
+                    <span class="text-2xl sm:text-3xl font-extrabold text-slate-100 group-hover:text-sky-300 chem-font tracking-wide">
+                        ${formatFormula(item.formula)}
+                    </span>
+                    <span class="text-[11px] text-slate-500 mt-2 font-medium group-hover:text-slate-400">Нажмите для выбора</span>
+                `;
+                cardsContainer.appendChild(btn);
+            });
+        }
+
+        function handleChoiceMode2(selectedIdx, isOdd) {
+            if (state.roundAnswered) return;
+            state.roundAnswered = true;
+            state.attempts++;
+
+            const set = mode2Sets[state.currentRound];
+            const explBox = document.getElementById('mode2ExplanationBox');
+            const explHeader = document.getElementById('explanationHeader');
+            const explText = document.getElementById('explanationText');
+
+            explBox.classList.remove('hidden', 'border-l-emerald-500', 'border-l-rose-500');
+
+            // Highlight chosen cards
+            set.items.forEach((item, idx) => {
+                const cardBtn = document.getElementById(`mode2-card-${idx}`);
+                if (item.isOdd) {
+                    cardBtn.className = 'h-32 rounded-2xl flex flex-col items-center justify-center p-4 border-2 border-emerald-400 bg-emerald-950/80 text-emerald-200 shadow-lg';
+                } else if (idx === selectedIdx && !isOdd) {
+                    cardBtn.className = 'h-32 rounded-2xl flex flex-col items-center justify-center p-4 border-2 border-rose-500 bg-rose-950/80 text-rose-200 shake-anim';
+                } else {
+                    cardBtn.className = 'h-32 glass-card rounded-2xl flex flex-col items-center justify-center p-4 border border-slate-800 opacity-50';
+                }
+            });
+
+            if (isOdd) {
+                playSound('correct');
+                updateScore(15);
+                state.correctCount++;
+                explBox.classList.add('border-l-emerald-500');
+                explHeader.innerHTML = `
+                    <i class="fa-solid fa-circle-check text-emerald-400 text-2xl"></i>
+                    <span class="text-emerald-300">Верно! Лишний оксид: ${set.oddFormula}</span>
+                `;
+            } else {
+                playSound('wrong');
+                explBox.classList.add('border-l-rose-500');
+                explHeader.innerHTML = `
+                    <i class="fa-solid fa-circle-xmark text-rose-400 text-2xl"></i>
+                    <span class="text-rose-300">Не совсем! Лишний оксид: ${set.oddFormula}</span>
+                `;
+            }
+
+            explText.innerHTML = `
+                <span class="font-bold text-white">${set.explanationRu}</span><br>
+                <span class="italic text-slate-400 text-sm mt-1 block">${set.explanationLt}</span>
+            `;
+        }
+
+        function nextRoundMode2() {
+            if (state.currentRound < 9) {
+                state.currentRound++;
+                renderRoundMode2();
+            } else {
+                playSound('win');
+                showFinalResults();
+            }
+        }
+
+        /* ================= STREAMING_CHUNK:Handling UI State Transitions & Modals... ================= */
+        function switchMode(mode) {
+            state.activeMode = mode;
+            const m1Btn = document.getElementById('tabMode1Btn');
+            const m2Btn = document.getElementById('tabMode2Btn');
+
+            const m1Sec = document.getElementById('mode1Section');
+            const m2Sec = document.getElementById('mode2Section');
+            const finalSec = document.getElementById('finalResultsSection');
+
+            finalSec.classList.add('hidden');
+
+            if (mode === 1) {
+                m1Sec.classList.remove('hidden');
+                m2Sec.classList.add('hidden');
+
+                m1Btn.className = 'flex-1 py-3 px-4 rounded-xl font-semibold text-sm sm:text-base transition flex items-center justify-center gap-2 bg-gradient-to-r from-sky-500 to-blue-600 text-white shadow-lg shadow-sky-500/20';
+                m2Btn.className = 'flex-1 py-3 px-4 rounded-xl font-semibold text-sm sm:text-base transition flex items-center justify-center gap-2 bg-slate-800/80 text-slate-400 hover:bg-slate-800 hover:text-slate-200 border border-slate-700/60';
+            } else {
+                m1Sec.classList.add('hidden');
+                m2Sec.classList.remove('hidden');
+
+                m2Btn.className = 'flex-1 py-3 px-4 rounded-xl font-semibold text-sm sm:text-base transition flex items-center justify-center gap-2 bg-gradient-to-r from-sky-500 to-blue-600 text-white shadow-lg shadow-sky-500/20';
+                m1Btn.className = 'flex-1 py-3 px-4 rounded-xl font-semibold text-sm sm:text-base transition flex items-center justify-center gap-2 bg-slate-800/80 text-slate-400 hover:bg-slate-800 hover:text-slate-200 border border-slate-700/60';
+            }
+        }
+
+        function showFinalResults() {
+            document.getElementById('mode1Section').classList.add('hidden');
+            document.getElementById('mode2Section').classList.add('hidden');
+            
+            const finalSec = document.getElementById('finalResultsSection');
+            finalSec.classList.remove('hidden');
+
+            document.getElementById('finalScoreDisplay').innerText = state.score;
+            
+            const accuracy = state.attempts > 0 ? Math.round((state.correctCount / state.attempts) * 100) : 100;
+            document.getElementById('accuracyDisplay').innerText = `${accuracy}%`;
+        }
+
+        function restartAllGames() {
+            state.score = 0;
+            state.attempts = 0;
+            state.correctCount = 0;
+            document.getElementById('scoreDisplay').innerText = '0';
+
+            initMode1();
+            initMode2();
+            switchMode(1);
+        }
+
+        /* ================= STREAMING_CHUNK:App Entry Point Initialization... ================= */
+        window.onload = function() {
+            initMode1();
+            initMode2();
+        };
+    </script>
+</body>
+</html>
